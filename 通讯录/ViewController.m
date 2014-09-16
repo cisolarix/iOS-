@@ -35,6 +35,7 @@
     
 }
 - (IBAction)readAllPeople:(id)sender {
+    if (ABAddressBookGetAuthorizationStatus() != kABAuthorizationStatusAuthorized) return;
 //    [self accessAllPeopleWithC];
     [self accessAllPeopleWithOC];
 }
@@ -89,5 +90,41 @@
     //    CFRelease(allPeople);
 }
 
+- (IBAction)updateFirstPerson:(id)sender {
+    if (ABAddressBookGetAuthorizationStatus() != kABAuthorizationStatusAuthorized) return;
+    ABAddressBookRef addressBook = ABAddressBookCreateWithOptions(NULL, NULL);
+    CFArrayRef allPeople = ABAddressBookCopyArrayOfAllPeople(addressBook);
+    ABRecordRef firstPerson = CFArrayGetValueAtIndex(allPeople, 0);
+    ABRecordSetValue(firstPerson, kABPersonFirstNameProperty, (__bridge CFStringRef)@"cisolarix", NULL);
+    ABAddressBookSave(addressBook, NULL);
+}
+
+- (IBAction)addNewPerson:(id)sender {
+    if (ABAddressBookGetAuthorizationStatus() != kABAuthorizationStatusAuthorized) return;
+    
+    // 1.创建新的联系人
+    ABRecordRef person = ABPersonCreate();
+    
+    // 2.设置信息
+    ABRecordSetValue(person, kABPersonLastNameProperty, (__bridge CFStringRef)@"刘", NULL);
+    ABRecordSetValue(person, kABPersonFirstNameProperty, (__bridge CFStringRef)@"蛋疼", NULL);
+    
+    ABMultiValueRef phone = ABMultiValueCreateMutable(kABMultiStringPropertyType);
+    ABMultiValueAddValueAndLabel(phone, (__bridge CFStringRef)@"10010", kABPersonPhoneMainLabel, NULL);
+    ABMultiValueAddValueAndLabel(phone, (__bridge CFStringRef)@"10011", kABPersonPhoneMobileLabel, NULL);
+    ABMultiValueAddValueAndLabel(phone, (__bridge CFStringRef)@"10012", kABPersonPhoneIPhoneLabel, NULL);
+    ABRecordSetValue(person, kABPersonPhoneProperty, phone, NULL);
+    
+    // 3.添加联系人到通讯录
+    ABAddressBookRef book = ABAddressBookCreateWithOptions(NULL, NULL);
+    ABAddressBookAddRecord(book, person, NULL);
+    
+    ABAddressBookSave(book, NULL);
+    
+    // 4.释放
+    CFRelease(phone);
+    CFRelease(person);
+    CFRelease(book);
+}
 
 @end
